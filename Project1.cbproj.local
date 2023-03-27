@@ -1,0 +1,47 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<BorlandProject>
+	<Transactions>
+    <Transaction>2021/06/18 13:07:51.000.746,=C:\Users\Acer\Documents\Embarcadero\Studio\Projects\Project1PCH1.h</Transaction>
+    <Transaction>2021/06/18 13:07:52.000.574,=C:\Users\Acer\Documents\Embarcadero\Studio\Projects\Unit1.cpp</Transaction>
+    <Transaction>2021/06/18 13:13:10.000.972,C:\Users\Acer\Documents\Embarcadero\Studio\Projects\uPrincipal.dfm=C:\Users\Acer\Documents\Embarcadero\Studio\Projects\Unit1.dfm</Transaction>
+    <Transaction>2021/06/18 13:13:10.000.972,C:\Users\Acer\Documents\Embarcadero\Studio\Projects\uPrincipal.h=C:\Users\Acer\Documents\Embarcadero\Studio\Projects\Unit1.h</Transaction>
+    <Transaction>2021/06/18 13:13:10.000.972,C:\Users\Acer\Documents\Embarcadero\Studio\Projects\uPrincipal.cpp=C:\Users\Acer\Documents\Embarcadero\Studio\Projects\Unit1.cpp</Transaction>
+    <Transaction>2021/06/18 13:13:44.000.024,C:\Users\Acer\Documents\Embarcadero\Studio\Projects\CG202101.h=C:\Users\Acer\Documents\Embarcadero\Studio\Projects\Project1PCH1.h</Transaction>
+    <Transaction>2021/06/18 13:56:40.000.689,=C:\Users\Acer\Documents\Embarcadero\Studio\Projects\Unit1.cpp</Transaction>
+    <Transaction>2021/06/18 14:02:59.000.850,C:\Users\Acer\Documents\Embarcadero\Studio\Projects\uPonto.cpp=C:\Users\Acer\Documents\Embarcadero\Studio\Projects\Unit1.cpp</Transaction>
+    <Transaction>2021/06/18 14:02:59.000.850,C:\Users\Acer\Documents\Embarcadero\Studio\Projects\uPonto.h=C:\Users\Acer\Documents\Embarcadero\Studio\Projects\Unit1.h</Transaction>
+    <Transaction>2021/06/18 14:09:33.000.622,=C:\Users\Acer\Documents\Embarcadero\Studio\Projects\Unit1.cpp</Transaction>
+    <Transaction>2021/06/18 14:17:17.000.589,C:\Users\Acer\Documents\Embarcadero\Studio\Projects\Project1.cbproj=C:\Users\Acer\Documents\Embarcadero\Studio\Projects\Project1.cbproj</Transaction>
+    <Transaction>2021/06/30 21:42:43.000.713,C:\Users\Acer\Documents\Embarcadero\Studio\Projects\Unit1.cpp=</Transaction>
+    <Transaction>2021/06/30 21:42:58.000.335,=C:\Users\Acer\Documents\Embarcadero\Studio\Projects\Unit2.cpp</Transaction>
+    <Transaction>2021/06/30 21:53:08.000.394,=C:\Users\Acer\Documents\Embarcadero\Studio\Projects\Unit1.cpp</Transaction>
+    <Transaction>2021/06/30 21:56:53.000.199,C:\Users\Acer\Documents\Embarcadero\Studio\Projects\uJanela.cpp=C:\Users\Acer\Documents\Embarcadero\Studio\Projects\Unit1.cpp</Transaction>
+    <Transaction>2021/06/30 21:56:53.000.199,C:\Users\Acer\Documents\Embarcadero\Studio\Projects\uJanela.h=C:\Users\Acer\Documents\Embarcadero\Studio\Projects\Unit1.h</Transaction>
+    <Transaction>2021/07/03 21:46:23.000.069,=C:\Users\Acer\Documents\Embarcadero\Studio\Projects\Unit1.cpp</Transaction>
+    <Transaction>2021/07/03 22:22:45.000.239,C:\Users\Acer\Documents\Embarcadero\Studio\Projects\Unit1.h=C:\Users\Acer\Documents\Embarcadero\Studio\Projects\uPoligono.h</Transaction>
+    <Transaction>2021/07/03 22:22:45.000.239,C:\Users\Acer\Documents\Embarcadero\Studio\Projects\Unit1.cpp=C:\Users\Acer\Documents\Embarcadero\Studio\Projects\uPoligono.cpp</Transaction>
+    <Transaction>2021/07/03 22:39:38.000.672,=C:\Users\Acer\Documents\Embarcadero\Studio\Projects\Unit1.cpp</Transaction>
+    <Transaction>2021/07/03 23:18:57.000.939,C:\Users\Acer\Documents\Embarcadero\Studio\Projects\Unit1.h=C:\Users\Acer\Documents\Embarcadero\Studio\Projects\uDisplay.h</Transaction>
+    <Transaction>2021/07/03 23:18:57.000.939,C:\Users\Acer\Documents\Embarcadero\Studio\Projects\Unit1.cpp=C:\Users\Acer\Documents\Embarcadero\Studio\Projects\uDisplay.cpp</Transaction>
+    <Transaction>2021/07/17 21:46:01.000.612,C:\Users\Acer\Documents\Embarcadero\Studio\Projects\CG202101.h=</Transaction>
+  </Transactions>
+	<ProjectSortOrder AutoSort="0" SortType="0">
+    <File Path="Project1.cpp"/>
+    <File Path="uPrincipal.cpp"/>
+    <File Path="uPrincipal.cpp"/>
+    <File Path="uPrincipal.dfm"/>
+    <File Path="uPrincipal.h"/>
+    <File Path="uJanela.cpp"/>
+    <File Path="uJanela.cpp"/>
+    <File Path="uJanela.h"/>
+    <File Path="uDisplay.cpp"/>
+    <File Path="uDisplay.cpp"/>
+    <File Path="uDisplay.h"/>
+    <File Path="uPoligono.cpp"/>
+    <File Path="uPoligono.cpp"/>
+    <File Path="uPoligono.h"/>
+    <File Path="uPonto.cpp"/>
+    <File Path="uPonto.cpp"/>
+    <File Path="uPonto.h"/>
+  </ProjectSortOrder>
+</BorlandProject>

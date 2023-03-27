@@ -1,0 +1,958 @@
+//---------------------------------------------------------------------------
+
+
+#pragma hdrstop
+
+#include "uPonto.cpp"
+#include "uPoligono.h"
+#define SIGN(x) ((x) < 0 ? (-1): (1))
+#define ABS(x) ((x) < 0 ? (-x) : (x))
+#define FLOOR(x) ((x) < 0 ? ( (x) - (int)(x) != 0 ? ((int)(x) - 1) : ((int)(x))) : (int)(x))
+#define FALSE 0
+#define TRUE 1
+#include <cmath>
+//---------------------------------------------------------------------------
+
+#pragma package(smart_init)
+
+Poligono::Poligono(){
+    tipo = 'l';//linha
+}
+Poligono::Poligono(char tipo){
+    this->tipo = tipo;
+}
+
+void Poligono::mostra(TListBox *lista){
+    lista->Items->Clear();
+    for (unsigned int i = 0; i < pontos.size(); i++){
+        if (this->tipo != '3')
+            lista->Items->Add(FloatToStr(pontos[i].x) + ", " + FloatToStr(pontos[i].y));
+        else
+            lista->Items->Add(FloatToStr(pontos[i].x) + ", " + FloatToStr(pontos[i].y) + ", " + FloatToStr(pontos[i].z));
+    }
+}
+
+void Poligono::metodoLineTo(TCanvas *canvas, Janela mundo, Janela vp){
+    for (unsigned int i = 0; i < pontos.size(); i++){
+        if (i == 0)
+            canvas->MoveTo(pontos[i].xw2vp(mundo, vp), pontos[i].yw2vp(mundo, vp));
+        else
+            canvas->LineTo(pontos[i].xw2vp(mundo, vp), pontos[i].yw2vp(mundo, vp));
+    }
+}
+
+void Poligono::metodoDDA(TCanvas *canvas, Janela mundo, Janela vp){
+
+    int length, x1, x2, y1, y2;
+    float deltax, deltay, x, y;
+
+    for(unsigned int i = 0; i < pontos.size()-1; i++){
+        x1 = pontos[i].xw2vp(mundo, vp);
+        x2 = pontos[i+1].xw2vp(mundo, vp);
+        y1 = pontos[i].yw2vp(mundo, vp);
+        y2 = pontos[i+1].yw2vp(mundo, vp);
+
+        if( ABS( (x2 - x1) ) >= ABS( (y2 - y1) ) )
+            length = ABS( (x2 - x1) );
+        else
+            length = ABS( (y2 - y1) );
+
+        deltax = (float) (x2 - x1) / (float) length;
+        deltay = (float) (y2 - y1) / (float) length;
+        x = x1 + 0.5 * SIGN (deltax);
+        y = y1 + 0.5 * SIGN (deltay);
+
+        for (int i = 0; i < length; i++) {
+            canvas->Ellipse(FLOOR(x)-1, FLOOR(y)-1, FLOOR(x)+1, FLOOR(y)+1);
+
+            x += deltax;
+            y += deltay;
+        }
+    }
+}
+
+void Poligono::metodoBresenham(TCanvas *canvas, Janela mundo, Janela vp){
+
+    int x1, x2, y1, y2, deltax, deltay, erro, tmp;
+    float x, y, signalx, signaly;
+    bool interchange;
+
+    for (unsigned int i = 0; i < pontos.size()-1; i++){
+
+        x1 = pontos[i].xw2vp(mundo, vp);
+        x2 = pontos[i+1].xw2vp(mundo, vp);
+        y1 = pontos[i].yw2vp(mundo, vp);
+        y2 = pontos[i+1].yw2vp(mundo, vp);
+
+        deltax = ABS ( (x2 - x1) );
+        deltay = ABS ( (y2 - y1) );
+        signalx = SIGN ( (x2 - x1) );
+        signaly = SIGN ( (y2 - y1) );
+        x = x1;
+        y = y1;
+        if (signalx < 0)
+            x -=1;
+        if (signaly < 0 )
+            y -= 1;
+        // trocar deltax com deltay dependendo da inclinacao da reta
+        interchange = FALSE;
+        if ( deltay > deltax) {
+            tmp = deltax;
+            deltax = deltay;
+            deltay = tmp;
+            interchange = TRUE;
+        }
+        erro = 2 * deltay - deltax;
+        for (int i = 0; i < deltax; i++) {
+            //setPixel( x, y);
+            canvas->Ellipse(x-1, y-1, x+1, y+1);
+            while (erro >= 0) {
+                if (interchange)
+                    x = x + signalx;
+                else
+                    y = y + signaly;
+                    erro = erro - 2 * deltax;
+            } // while
+            if (interchange)
+                y = y + signaly;
+            else
+                x = x + signalx;
+            erro = erro + 2 * deltay;
+        } // for
+    }
+}
+
+void Poligono::metodoCircunferencia(TCanvas *canvas, Janela mundo, Janela vp){
+    canvas->Pen->Color = clBlue;
+
+    for (unsigned int i = 0; i < pontos.size(); i++){
+        double ax, ay;
+        Ponto aux_ponto;
+        aux_ponto.x = pontos[i].x;
+        aux_ponto.y = pontos[i].y;
+        ax = aux_ponto.xw2vp(mundo, vp);
+        ay = aux_ponto.yw2vp(mundo, vp);
+
+        canvas->Ellipse(ax - 1, ay - 1, ax + 1, ay + 1);
+
+    }
+    canvas->Pen->Color = clBlack;
+}
+
+
+void Poligono::desenha(TCanvas *canvas, Janela mundo, Janela vp, int indiceReta){
+
+    if (this->tipo == 'b'){
+        metodoCircunferencia(canvas, mundo, vp);
+    }
+    else{
+        switch(indiceReta){
+        case 0:
+            metodoLineTo(canvas, mundo, vp);
+            break;
+        case 1:
+            metodoDDA(canvas, mundo, vp);
+            break;
+        case 2:
+            metodoBresenham(canvas, mundo, vp);
+            break;
+        default:
+            metodoLineTo(canvas, mundo, vp);
+            break;
+        }
+    }
+
+}
+
+void Poligono::translacao2d(double dx, double dy){
+    for (unsigned int i = 0; i < pontos.size(); i++){
+        pontos[i].translacao(dx, dy);
+    }
+}
+void Poligono::escalonamento2d(double sx, double sy){
+    for (unsigned int i = 0; i < pontos.size(); i++){
+        pontos[i].escalonamento(sx, sy);
+    }
+}
+void Poligono::rotacao2d(double theta){
+    for (unsigned int i = 0; i < pontos.size(); i++){
+        pontos[i].rotacao2d(theta);
+    }
+
+}
+
+void Poligono::desenhaPontoCircunferencia(double xc, double yc, double x, double y){
+    pontos.push_back(Ponto(xc + x, yc + y));
+    pontos.push_back(Ponto(xc - x, yc + y));
+    pontos.push_back(Ponto(xc - y, yc + x));
+    pontos.push_back(Ponto(xc - y, yc - x));
+    pontos.push_back(Ponto(xc - x, yc - y));
+    pontos.push_back(Ponto(xc + x, yc - y));
+    pontos.push_back(Ponto(xc + y, yc - x));
+    pontos.push_back(Ponto(xc + y, yc + x));
+
+}
+
+void Poligono::desenhaCircunferencia(TCanvas *canvas, Janela mundo, Janela vp, double x_central, double y_central, double raio){
+    int x, y, p;
+    x = 0;
+    y = raio;
+    desenhaPontoCircunferencia(x_central, y_central, x, y);
+     p = 1 - raio;
+     while (x < y){
+         if (p < 0)
+             x++;
+         else{
+             x++;
+             y--;
+         }
+         if (p < 0)
+             p += 2* x + 1;
+         else
+             p += 2* (x - y) + 1;
+         desenhaPontoCircunferencia(x_central, y_central, x, y);
+     }
+
+}
+
+double Poligono::getCentroX(){
+    double count = 0;
+    for(unsigned int i = 0; i < pontos.size(); i++){
+        count += pontos[i].x;
+    }
+    count /= pontos.size();
+    return count;
+}
+
+double Poligono::getCentroY(){
+    double count = 0;
+    for(unsigned int i = 0; i < pontos.size(); i++){
+        count += pontos[i].y;
+    }
+    count /= pontos.size();
+    return count;
+}
+
+double Poligono::getCentroZ(){
+    double count = 0;
+    for(unsigned int i = 0; i < pontos.size(); i++){
+        count += pontos[i].z;
+    }
+    count /= pontos.size();
+    return count;
+}
+
+void multiplicaMatriz(double m1[][4], double m2[][4], double res[][4], int linhaM1, int colunaM1, int linhaM2, int colunaM2){
+	int i, j, k;
+
+	//Zerando matriz resultado.
+	for(i = 0; i < linhaM1; ++i)
+	{
+		for(j = 0; j < colunaM2; ++j)
+		{
+			res[i][j] = 0;
+		}
+	}
+
+	// Multiplicacao de m1 por m2, com resultado em res
+	for(i = 0; i < linhaM1; ++i)
+	{
+		for(j = 0; j < colunaM2; ++j)
+		{
+			for(k=0; k<colunaM1; ++k)
+			{
+				res[i][j] += m1[i][k] * m2[k][j];
+			}
+		}
+	}
+}
+
+
+
+void Poligono::rotacaoHomogenea(double theta){
+
+    double dx = getCentroX();
+    double dy = getCentroY();
+
+    double matrizTranslada[4][4] = {
+                        {1, 0, 0},
+                        {0, 1, 0},
+                        {-dx, -dy, 1}
+                        };
+
+    double ang = theta * (M_PI/180);
+    double cost = cos(ang);
+    double sint = sin(ang);
+
+    double matrizRotacao[4][4] = {
+                        {cost, sint, 0},
+                        {-sint, cost, 0},
+                        {0, 0, 1}
+                        };
+    double matrizTranslada2[4][4] = {
+                        {1, 0, 0},
+                        {0, 1, 0},
+                        {dx, dy, 1}
+                        };
+
+    double resultado[4][4], aux[4][4];
+
+    multiplicaMatriz(matrizTranslada, matrizRotacao, aux, 3, 3, 3, 3);
+    multiplicaMatriz(aux, matrizTranslada2, resultado, 3, 3, 3, 3);
+
+    for (unsigned int i = 0; i < pontos.size(); i++){
+        pontos[i].transformacaoMatricial(resultado);
+    }
+
+}
+
+void Poligono::escalonamentoHomogeneo (double sx, double sy){
+    double cx = getCentroX();
+    double cy = getCentroY();
+
+    double matrizTranslada[4][4] = {
+                        {1, 0, 0},
+                        {0, 1, 0},
+                        {-cx, -cy, 1}
+                        };
+    double matrizEscalonamento[4][4] = {
+                        {sx, 0, 0},
+                        {0, sy, 0},
+                        {0, 0, 1}
+                        };
+    double matrizTranslada2[4][4] = {
+                        {1, 0, 0},
+                        {0, 1, 0},
+                        {cx, cy, 1}
+                        };
+
+    double resultado[4][4], aux[4][4];
+
+    multiplicaMatriz(matrizTranslada, matrizEscalonamento, aux, 3, 3, 3, 3);
+    multiplicaMatriz(aux, matrizTranslada2, resultado, 3, 3, 3, 3);
+
+    for (unsigned int i = 0; i < pontos.size(); i++){
+        pontos[i].transformacaoMatricial(resultado);
+    }
+}
+
+void Poligono::translacaoHomogenea (double dx, double dy){
+    double cx = getCentroX();
+    double cy = getCentroY();
+
+    double matrizTranslada[4][4] = {
+                        {1, 0, 0},
+                        {0, 1, 0},
+                        {-cx, -cy, 1}
+                        };
+    double matrizTranslacao[4][4] = {
+                        {1, 0, 0},
+                        {0, 1, 0},
+                        {dx, dy, 1}
+                        };
+    double matrizTranslada2[4][4] = {
+                        {1, 0, 0},
+                        {0, 1, 0},
+                        {cx, cy, 1}
+                        };
+
+    double resultado[4][4], aux[4][4];
+
+    multiplicaMatriz(matrizTranslada, matrizTranslacao, aux, 3, 3, 3, 3);
+    multiplicaMatriz(aux, matrizTranslada2, resultado, 3, 3, 3, 3);
+
+    for (unsigned int i = 0; i < pontos.size(); i++){
+        pontos[i].transformacaoMatricial(resultado);
+    }
+}
+
+void Poligono::translacao3d(double dx, double dy, double dz){
+    for(unsigned int i = 0; i < pontos.size(); i++){
+        pontos[i].translacao(dx, dy, dz);
+    }
+}
+
+void Poligono::translacao3dHomogeneo(double dx, double dy, double dz){
+
+    double cx = getCentroX();
+    double cy = getCentroY();
+    double cz = getCentroZ();
+
+    double matrizTranslada[4][4] = {
+                        {1, 0, 0, 0},
+                        {0, 1, 0, 0},
+                        {0, 0, 1, 0},
+                        {-cx, -cy, -cz, 1}
+                        };
+    double matrizTranslacao[4][4] = {
+                        {1, 0, 0, 0},
+                        {0, 1, 0, 0},
+                        {0, 0, 1, 0},
+                        {dx, dy, dz, 1}
+                        };
+    double matrizTranslada2[4][4] = {
+                        {1, 0, 0, 0},
+                        {0, 1, 0, 0},
+                        {0, 0, 1, 0},
+                        {cx, cy, cz, 1}
+                        };
+
+    double resultado[4][4], aux[4][4];
+
+    multiplicaMatriz(matrizTranslada, matrizTranslacao, aux, 4, 4, 4, 4);
+    multiplicaMatriz(aux, matrizTranslada2, resultado, 4, 4, 4, 4);
+
+    for (unsigned int i = 0; i < pontos.size(); i++){
+        pontos[i].transformacaoMatricial3d(resultado);
+    }
+
+}
+
+void Poligono::escalonamento3d(double sx, double sy, double sz){
+    for(unsigned int i = 0; i < pontos.size(); i++){
+        pontos[i].escalonamento(sx, sy, sz);
+    }
+}
+
+void Poligono::escalonamento3dHomogeneo(double sx, double sy, double sz){
+    double cx = getCentroX();
+    double cy = getCentroY();
+    double cz = getCentroZ();
+
+    double matrizTranslada[4][4] = {
+                        {1, 0, 0, 0},
+                        {0, 1, 0, 0},
+                        {0, 0, 1, 0},
+                        {-cx, -cy, -cz, 1}
+                        };
+    double matrizEscalonamento[4][4] = {
+                        {sx, 0, 0, 0},
+                        {0, sy, 0, 0},
+                        {0, 0, sz, 0},
+                        {0, 0, 0, 1}
+                        };
+    double matrizTranslada2[4][4] = {
+                        {1, 0, 0, 0},
+                        {0, 1, 0, 0},
+                        {0, 0, 1, 0},
+                        {cx, cy, cz, 1}
+                        };
+
+    double resultado[4][4], aux[4][4];
+
+    multiplicaMatriz(matrizTranslada, matrizEscalonamento, aux, 4, 4, 4, 4);
+    multiplicaMatriz(aux, matrizTranslada2, resultado, 4, 4, 4, 4);
+
+    for (unsigned int i = 0; i < pontos.size(); i++){
+        pontos[i].transformacaoMatricial3d(resultado);
+    }
+}
+
+void Poligono::rotacao3dHomogenea(double theta, char eixo){
+
+    double ang = theta * (M_PI/180);
+    double cost = cos(ang);
+    double sint = sin(ang);
+
+     double matrizRotacaoX[4][4] = {{1, 0, 0, 0},
+                                    {0, cost, -sint, 0},
+                                    {0, sint, cost, 0},
+                                    {0, 0, 0, 1}};
+
+     double matrizRotacaoY[4][4] = {{cost, 0, sint, 0},
+                                    {0, 1, 0, 0},
+                                    {-sint, 0, cost, 0},
+                                    {0, 0, 0, 1}};
+     double matrizRotacaoZ[4][4] = {{cost, -sint, 0, 0},
+                                    {sint, cost, 0, 0},
+                                    {0, 0, 1, 0},
+                                    {0, 0, 0, 1}};
+
+    double cx = getCentroX();
+    double cy = getCentroY();
+    double cz = getCentroZ();
+
+    double matrizTranslada[4][4] = {
+                        {1, 0, 0, 0},
+                        {0, 1, 0, 0},
+                        {0, 0, 1, 0},
+                        {-cx, -cy, -cz, 1}
+                        };
+
+
+
+    double matrizTranslada2[4][4] = {
+                        {1, 0, 0, 0},
+                        {0, 1, 0, 0},
+                        {0, 0, 1, 0},
+                        {cx, cy, cz, 1}
+                        };
+
+    double resultado[4][4], aux[4][4];
+
+
+    switch(eixo){
+    case 'x':
+        multiplicaMatriz(matrizTranslada, matrizRotacaoX, aux, 4, 4, 4, 4);
+        break;
+    case 'y':
+        multiplicaMatriz(matrizTranslada, matrizRotacaoY, aux, 4, 4, 4, 4);
+        break;
+    case 'z':
+        multiplicaMatriz(matrizTranslada, matrizRotacaoZ, aux, 4, 4, 4, 4);
+        break;
+    default:
+        multiplicaMatriz(matrizTranslada, matrizRotacaoX, aux, 4, 4, 4, 4);
+        break;
+    }
+
+
+    multiplicaMatriz(aux, matrizTranslada2, resultado, 4, 4, 4, 4);
+
+    for (unsigned int i = 0; i < pontos.size(); i++){
+        pontos[i].transformacaoMatricial3d(resultado);
+    }
+
+
+}
+
+void Poligono::rotacao(double theta, bool homogenea, bool eixoX, bool eixoY, bool eixoZ){
+    if (this->tipo != '3'){
+        if (homogenea)
+            rotacaoHomogenea(theta);
+        else
+            rotacao2d(theta);
+    }
+    else {
+        if(eixoX)
+            rotacao3dHomogenea(theta, 'x');
+        if(eixoY)
+            rotacao3dHomogenea(theta, 'y');
+        if(eixoZ)
+            rotacao3dHomogenea(theta, 'z');
+    }
+}
+
+void Poligono::escalonamento(double sx, double sy, double sz, bool homogenea){
+    if (this->tipo != '3'){
+        if(homogenea)
+            escalonamentoHomogeneo(sx, sy);
+        else
+            escalonamento2d(sx, sy);
+    }
+    else {
+        if(homogenea)
+            escalonamento3d(sx, sy, sz);
+        else
+            escalonamento3dHomogeneo(sx, sy, sz);
+    }
+}
+
+
+void Poligono::translacao(double dx, double dy, double dz, bool homogenea){
+     if (this->tipo != '3'){
+         if(homogenea)
+             translacaoHomogenea(dx, dy);
+         else
+             translacao2d(dx, dy);
+     }
+     else{
+          if(homogenea)
+              translacao3d(dx, dy, dz);
+          else
+              translacao3d(dx, dy, dz);
+     }
+
+}
+
+void Poligono::desenhaJanelaClipping (TCanvas *canvas, Janela mundo, Janela vp, Janela clipping){
+    pontos.push_back(Ponto (clipping.xmin, clipping.ymax));
+    pontos.push_back(Ponto (clipping.xmin, clipping.ymin));
+    pontos.push_back(Ponto (clipping.xmax, clipping.ymin));
+    pontos.push_back(Ponto (clipping.xmax, clipping.xmax));
+    pontos.push_back(Ponto (clipping.xmin, clipping.ymax));
+
+}
+
+double equacaoFundamentalDaReta(double x0, double y0, double x1, double y1){
+    return ((y1-y0)/(x1-x0));
+}
+
+Poligono Poligono::clipping(Janela clip){
+
+    Poligono pol;
+
+    if(tipo == 'j'){
+        return pol;
+    }
+
+    int regiaoPonto0 = pontos[0].regiaoCohen(clip);
+    int regiaoPonto1 = pontos[1].regiaoCohen(clip);
+    bool aceita = false;
+
+    pol.pontos.push_back(pontos[0]);
+    pol.pontos.push_back(pontos[1]);
+
+
+    while (true){
+        if (!(regiaoPonto0 | regiaoPonto1)){
+            //bitwise OR: se ambos os pontos estão dentro da janela, trivialmente aceita e sai do loop
+            //ex: 0000 | 0000 resulta em 0000
+            aceita = true;
+            break;
+        }
+        else if (regiaoPonto0 & regiaoPonto1){//se estão na mesma zona, retorna true (numero >0)
+            //bitwise AND: ambos os pontos dividem uma zona externa, então estão fora da janela
+            break;
+        }
+        else {
+            //falha em ambos os testes, então calcula-se o segmento de reta para clipar
+            //de um ponto externo para uma intersecção com a borda da janela
+            double x, y;
+
+            //pelo menos um ponto está fora da janela de clipping:
+            int regiaoP = regiaoPonto0 ? regiaoPonto0 : regiaoPonto1;
+
+            //cálculo da intersecção:
+             //m = (y1 - y0) / (x1 - x0)
+             //x = x0 + (1/m) * (ym - yo), onde ym é ymin ou ymax
+             //y = y0 + m * (xm - x0), onde xm é xmin ou xmax
+             const int TOPO = 8, FUNDO = 4, ESQUERDA = 1, DIREITA = 2;
+
+             double m = equacaoFundamentalDaReta(pol.pontos[0].x, pol.pontos[0].y, pol.pontos[1].x, pol.pontos[1].y);
+
+             if (regiaoP & TOPO){//o ponto está acima da janela
+                 x = pol.pontos[0].x + (1/m) * (clip.ymax - pol.pontos[0].y);
+                 y = clip.ymax;
+             }
+             else if (regiaoP & FUNDO) {
+                 x = pol.pontos[0].x + (1/m) * (clip.ymin - pol.pontos[0].y);
+                 y = clip.ymin;
+             }
+             else if(regiaoP & DIREITA){
+                 y = pol.pontos[0].y + m * (clip.xmax - pol.pontos[0].x);
+                 x = clip.xmax;
+             }
+             else if (regiaoP & ESQUERDA){
+                 y = pol.pontos[0].y + m * (clip.xmin - pol.pontos[0].x);
+                 x = clip.xmin;
+             }
+             if (regiaoP == regiaoPonto0){
+                 pol.pontos[0].x = x;
+                 pol.pontos[0].y = y;
+                 regiaoPonto0 = pol.pontos[0].regiaoCohen(clip);
+             }
+             else{
+                 pol.pontos[1].x = x;
+                 pol.pontos[1].y = y;
+                 regiaoPonto1 = pol.pontos[1].regiaoCohen(clip);
+             }
+
+        }
+    }
+    if (aceita){
+        pol.id = -1;
+        return pol;
+    }
+
+    pol.pontos.clear();
+    return pol;
+}
+
+Poligono Poligono::curvaHermite(){
+    Ponto R0, R3;
+    R0.x = pontos[1].x - pontos[0].x;
+    R0.y = pontos[1].y - pontos[0].y;
+    R3.x = pontos[3].x - pontos[2].x;
+    R3.y = pontos[3].y - pontos[2].y;
+
+    //4x4
+    double matrizHermite[4][4] = {{2, -2, 1, 1},
+                                  {-3, 3, -2, -1},
+                                  {0, 0, 1, 0},
+                                  {1, 0, 0, 0}};
+
+
+    //matrizes 4x1
+    double Ghx[4][4] = {{pontos[0].x},
+                        {pontos[3].x},
+                        {R0.x},
+                        {R3.x}};
+
+    double Ghy[4][4] = {{pontos[0].y},
+                        {pontos[3].y},
+                        {R0.y},
+                        {R3.y}};
+
+
+    double Cx[4][4], Cy[4][4]; //matriz 4x1
+    multiplicaMatriz(matrizHermite, Ghx, Cx, 4, 4, 4, 1);
+    multiplicaMatriz(matrizHermite, Ghy, Cy, 4, 4, 4, 1);
+
+    //double T[4][4]; //matriz 1x4
+    Poligono curva;
+    double aux[4][4]; //matriz 1x1
+    Ponto pontoCurva;
+    for (double t = 0; t <= 1; t+=0.01){
+        double T[4][4] = {{t*t*t, t*t, t, 1}};
+
+        multiplicaMatriz(T, Cx, aux, 1, 4, 4, 1);
+        pontoCurva.x = aux[0][0];
+
+        multiplicaMatriz(T, Cy, aux, 1, 4, 4, 1);
+        pontoCurva.y = aux[0][0];
+
+        curva.pontos.push_back(pontoCurva);
+    }
+
+    return curva;
+
+}
+
+Poligono Poligono::curvaBezier(){
+    //4x4
+    double matrizBezier[4][4] = {{-1, 3, -3, 1},
+                                  {3, -6, 3, 0},
+                                  {-3, 3, 0, 0},
+                                  {1, 0, 0, 0}};
+
+
+    //matrizes 4x1
+    double Gbx[4][4] = {{pontos[0].x},
+                        {pontos[1].x},
+                        {pontos[2].x},
+                        {pontos[3].x}};
+
+    double Gby[4][4] = {{pontos[0].y},
+                        {pontos[1].y},
+                        {pontos[2].y},
+                        {pontos[3].y}};
+
+
+    double Cx[4][4], Cy[4][4]; //matriz 4x1
+    multiplicaMatriz(matrizBezier, Gbx, Cx, 4, 4, 4, 1);
+    multiplicaMatriz(matrizBezier, Gby, Cy, 4, 4, 4, 1);
+
+    //double T[4][4]; //matriz 1x4
+    Poligono curva;
+    double aux[4][4]; //matriz 1x1
+    Ponto pontoCurva;
+    for (double t = 0; t <= 1; t+=0.01){
+        double T[4][4] = {{t*t*t, t*t, t, 1}};
+
+        multiplicaMatriz(T, Cx, aux, 1, 4, 4, 1);
+        pontoCurva.x = aux[0][0];
+
+        multiplicaMatriz(T, Cy, aux, 1, 4, 4, 1);
+        pontoCurva.y = aux[0][0];
+
+        curva.pontos.push_back(pontoCurva);
+    }
+
+    return curva;
+
+}
+
+Poligono Poligono::curvaBSpline(){
+    double matrizBSpline[4][4] = {{-1.0/6.0, 3.0/6.0, -3.0/6.0, 1.0/6.0},
+                                  {3.0/6.0, -6.0/6.0, 3.0/6.0, 0},
+                                  {-3.0/6.0, 0, 3.0/6.0, 0},
+                                  {1.0/6.0, 4.0/6.0, 1.0/6.0, 0}};
+
+    Poligono curva;
+    Ponto pontoCurva;
+
+    for (unsigned int i = 3; i < pontos.size(); i++){
+
+        double Gbsx[4][4] = {{pontos[i-3].x},
+                             {pontos[i-2].x},
+                             {pontos[i-1].x},
+                             {pontos[i].x}};
+
+        double Gbsy[4][4] = {{pontos[i-3].y},
+                             {pontos[i-2].y},
+                             {pontos[i-1].y},
+                             {pontos[i].y}};
+
+        double Cx[4][4], Cy[4][4];
+        multiplicaMatriz(matrizBSpline, Gbsx, Cx, 4, 4, 4, 1);
+        multiplicaMatriz(matrizBSpline, Gbsy, Cy, 4, 4, 4, 1);
+
+        double aux[4][4];
+
+        for (double t = 0; t <= 1; t+=0.01){
+            double T[4][4] = {{t*t*t, t*t, t, 1}};
+
+            multiplicaMatriz(T, Cx, aux, 1, 4, 4, 1);
+            pontoCurva.x = aux[0][0];
+
+            multiplicaMatriz(T, Cy, aux, 1, 4, 4, 1);
+            pontoCurva.y = aux[0][0];
+
+            curva.pontos.push_back(pontoCurva);
+        }
+    }
+    return curva;
+
+}
+
+double distanciaEntrePontos(Ponto p0, Ponto p1){
+    return sqrt(pow((p0.x - p1.x), 2) + pow((p0.y - p1.y), 2));
+}
+
+Ponto pontoMedio(Ponto p0, Ponto p1){
+    Ponto medio;
+    medio.x = (p0.x + p1.x)/2;
+    medio.y = (p0.y + p1.y)/2;
+    return medio;
+}
+
+void Poligono::casteljauRecursivo(Poligono *curva, Ponto p0, Ponto p1, Ponto p2){
+   double dist = distanciaEntrePontos(p0, p2);
+   if (dist < 1){
+       curva->pontos.push_back(p0);
+   }
+   else{
+       Ponto p1_aux = pontoMedio(p0, p1);
+       Ponto p2_aux = pontoMedio(p1, p2);
+       Ponto p1_p2_aux = pontoMedio(p1_aux, p2_aux);
+       casteljauRecursivo(curva, p0, p1_aux, p1_p2_aux);
+       casteljauRecursivo(curva, p1_p2_aux, p2_aux, p2);
+   }
+}
+
+Poligono Poligono::curvaCasteljau(){
+    Poligono curva;
+    curva.pontos.push_back(pontos[0]);
+    casteljauRecursivo(&curva, pontos[0], pontos[1], pontos[2]);
+
+    return curva;
+}
+
+void calculaProx(double m[4][4]){
+    double aux[4][4] = {{m[0][0] + m[0][1]},
+                        {m[0][1]+ m[0][2]},
+                        {m[0][2] + m[0][3]},
+                        {m[0][3]}};
+
+    m[0][0] = aux[0][0];
+    m[0][1] = aux[0][1];
+    m[0][2] = aux[0][2];
+    m[0][3] = aux[0][3];
+
+}
+
+
+Poligono Poligono::curvaForwardDifference(){
+
+    Ponto R0, R3;
+    R0.x = pontos[1].x - pontos[0].x;
+    R0.y = pontos[1].y - pontos[0].y;
+    R3.x = pontos[3].x - pontos[2].x;
+    R3.y = pontos[3].y - pontos[2].y;
+
+    //4x4
+    double matrizHermInv[4][4] = {{0,  0, 0, 1},
+                                  {1, 1, 1, 1},
+                                  {0, 0, 1, 0},
+                                  {3, 2, 1, 0}};
+
+
+    //matrizes 4x1
+    double Ghx[4][4] = {{pontos[0].x},
+                        {pontos[3].x},
+                        {R0.x},
+                        {R3.x}};
+
+    double Ghy[4][4] = {{pontos[0].y},
+                        {pontos[3].y},
+                        {R0.y},
+                        {R3.y}};
+
+
+
+    double s = 0.01;
+
+    //CALCULO DOS COEFICIENTES X E Y
+    double Coefx[4][4], Coefy[4][4]; //matriz 4x1
+    multiplicaMatriz(matrizHermInv, Ghx, Coefx, 4, 4, 4, 1);
+    multiplicaMatriz(matrizHermInv, Ghy, Coefy, 4, 4, 4, 1);
+
+    //CONDIÇÕES INICIAIS DO FORWARD DIFFERENCE
+    double x0, dx0, d2x0, d3x0;
+    double y0, dy0, d2y0, d3y0;
+
+    /*
+    //f0
+    x0 = Coefx[3][0];
+    y0 = Coefy[3][0];
+    //f0'
+    dx0 = Coefx[0][0]*s*s*s + Coefx[1][0]*s*s + Coefx[2][0]*s;
+    dy0 = Coefy[0][0]*s*s*s + Coefy[1][0]*s*s + Coefx[2][0]*s;
+    //f0''
+    d2x0 = 6*Coefx[0][0]*s*s*s + 2 * Coefx[1][0]*s*s;
+    d2y0 = 6*Coefy[0][0]*s*s*s + 2 * Coefy[1][0]*s*s;
+    //f0'''
+    d3x0 = 6 * Coefx[0][0]*s*s*s;
+    d3y0 = 6 * Coefy[0][0]*s*s*s;
+    */
+
+    //f0
+    x0 = Coefx[0][0];
+    y0 = Coefy[0][0];
+
+    //f'
+    dx0 = Coefx[1][0];
+    dy0 = Coefy[1][0];
+
+    //f''
+    d2x0 = Coefx[2][0];
+    d2y0 = Coefy[2][0];
+
+    //f'''
+    d3x0 = Coefx[3][0];
+    d3y0 = Coefy[3][0];
+
+    Poligono curva;
+    Ponto pontoCurva;
+
+
+
+    for (double t = 0; t <= 1; t+=s){
+        pontoCurva.x = Coefx[0][0];
+        pontoCurva.y = Coefy[0][0];
+
+        //calculo do forward
+        Coefx[0][0]  += Coefx[1][0];
+        Coefx[1][0] += Coefx[2][0];
+        Coefx[2][0] += Coefx[3][0];
+        Coefy[0][0]  += Coefy[1][0];
+        Coefy[1][0] += Coefy[2][0];
+        Coefy[2][0] += Coefy[3][0];
+        //
+
+        curva.pontos.push_back(pontoCurva);
+    }
+
+
+   /* for (double t = 0; t <= 1; t+=s){
+        pontoCurva.x = x0;
+        pontoCurva.y = y0;
+
+        //calculo do forward
+        x0  += dx0;
+        dx0 += d2x0;
+        d2x0 = d2x0 + d3x0;
+        y0   =  y0 + dy0;
+        dy0  = dy0 + d2y0;
+        d2y0 = d2y0 + d3y0;
+        //
+
+        curva.pontos.push_back(pontoCurva);
+    }*/
+
+    return curva;
+
+
+};
+
